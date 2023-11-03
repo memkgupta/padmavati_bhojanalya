@@ -6,6 +6,8 @@ uname:{type:String,required:true,unique:true},
 email:{type:String,required:true,unique:true},
 password:{type:String,required:true},
 role:{type:String,required:true,enum:["user","admin","manager","employee"],default:"user"},
+otp:{otp:{type:String},createdAt:{type:Date,default:Date.now}},// it will contain the recent most otp sent for this account
+verified:{type:Boolean,default:false,required:true},
 mobile_no:{type:String,required:true,unique:true}
 },{
     timestamps:true // this will automatically create createdAt and updatedAt fields

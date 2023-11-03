@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 
 const errorHandler = require("../middlewares/error");
 const { HttpError } = require("../utils/Errors/HttpError");
+const { sendOTP } = require("../utils/otpUtils");
 const loginHandler = async (req, res, next) => {
   //checking wether the user exists or not
   const user = await User.findOne({
@@ -51,6 +52,10 @@ const signUpHandler = async (req, res, next) => {
     });
   } else {
     try {
+      const OTP = sendOTP(req.body.email);
+      if(OTP){
+        req.body.otp = {otp:OTP};  // adding otp property to req.body
+      }
       const user = await User.create(req.body);
       user.save();
       if (user) {
@@ -68,6 +73,43 @@ const signUpHandler = async (req, res, next) => {
     }
   }
 };
+const verifyOTP = async(req,res,next)=>{
+
+  const {otp,email} = req.body;
+  
+  try {
+    const user = await User.findOne({email:email});
+    if(!user){
+      return next(new HttpError(400,"Invalid Email Id"))
+    }
+    // Checking wether there is an recent otp or not 
+    if(!user.otp.otp){
+      return next(new HttpError(400,"Invalid Request"));
+    }
+    else{
+      if(otp===user.otp.otp){
+        // checking wether the otp is expired or not
+        if(Date.now()-user.otp.createdAt>1000*10*60){
+          return next(new HttpError(400,"Otp time expired please request another otp"))
+        }
+        // once otp is matched marked verified true and unset the otp
+  User.findOneAndUpdate({email:email},{$set:{verified:true},$unset:{otp:1}},{new:true}).then(()=>{
+  res.status(200).json({success:true,message:"OTP matched And User Verified"});
+  }).catch((err)=>{
+    console.log(err)
+    return next(new HttpError(400,err.message))
+  })
+      }
+      else{
+        return next(new HttpError(400,"Invalid OTP"));
+      }
+    }
+   
+  } catch (error) {
+    return next(new HttpError(400,error.message))
+  }
+
+}
 const updateHandler = async (req, res) => {};
 const fetchAccount = (req, res) => {
   res.send(req.user);
@@ -77,4 +119,5 @@ module.exports = {
   loginHandler,
   signUpHandler,
   fetchAccount,
+  verifyOTP
 };
