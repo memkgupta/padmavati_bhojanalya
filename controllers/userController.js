@@ -1,5 +1,5 @@
 const { getUser, setUser } = require("../middlewares/auth");
-const User = require("../models/userModel");
+const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 
 const errorHandler = require("../middlewares/error");
